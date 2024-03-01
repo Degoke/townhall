@@ -19,7 +19,8 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'firstname',
+        'lastname',
         'email',
         'password',
     ];
@@ -46,5 +47,9 @@ class User extends Authenticatable
 
     public function communities(): HasMany {
         return $this->hasMany(Community::Class);
+    }
+
+    public function communityMemberships(): HasMany {
+        return $this->hasMany(CommunityMembership::Class);
     }
 }

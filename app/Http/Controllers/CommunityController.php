@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Community;
+use App\Models\CommunityMembership;
+use App\Models\CommunityGroup;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -14,10 +16,41 @@ class CommunityController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $user = $request->user();
+        $communityId = $request->route('communityId');
+        $groupId = $request->route('groupId');
+
+        $memberships = $user->communityMemberships()->with(['community'])->get();
+
+        $community = NULL;
+        $group = NULL;
+        $groups = NULL;
+
+        if (isset($communityId)) {
+            $community = Community::where('id', $communityId)->first();
+
+            if ($community) {
+                $groups = CommunityGroup::where('community_id', $communityId)->whereHas('communityMemberships', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })->get();
+    
+                if (isset($groupId)) {
+                    $group = CommunityGroup::where('id', $groupId)->first();
+    
+                    if (!$group) {
+                        $group = $groups->where('is_default', true)->get();
+                    }
+                    }
+                }  
+            }
+
         return Inertia::render('Community/Index', [
-            'communities' => Community::with('user:id,name')->latest()->get(),
+            'memberships' => $memberships,
+            'community' => $community,
+            'groups' => $groups,
+            'group' => $group,
         ]);
     }
 
@@ -36,19 +69,38 @@ class CommunityController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:256',
+            'description' => 'required|string|max:256',
         ]);
 
-        $request->user()->communities()->create($validated);
+        // create community
+        $community = $request->user()->communities()->create($validated);
 
-        return redirect(route('community.index'));
+        // create membership as admin
+        $communityMembership = new CommunityMembership();
+        $communityMembership->user_id = $request->user()->id;
+        $communityMembership->is_admin = true;
+        $communityMembership->community_id = $community->id;
+        $communityMembership->save();
+
+        // create default group: `general`
+        $communityGroup = new CommunityGroup();
+        $communityGroup->is_default = true;
+        $communityGroup->name = 'general';
+        $communityGroup->community_id = $community->id;
+        $communityGroup->save();
+
+        $communityMembership->communityGroups()->attach($communityGroup->id);
+
+
+        return redirect(route('community.show', ['id' => $community->id]));
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Community $community)
+    public function show(Request $request, Community $community)
     {
-        //
+        
     }
 
     /**

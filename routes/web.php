@@ -36,8 +36,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get('/community/new', function () {
+    return Inertia::render('Community/New');
+})->middleware(['auth', 'verified'])->name('community.new');
+
+Route::get('/community/{communityId?}/{groupId?}', [CommunityController::class, 'index'])
+    -> middleware(['auth', 'verified'])->name('community.index');
+
 Route::Resource('community', CommunityController::class)
-    -> only(['index', 'store', 'update', 'destroy'])
+    -> only(['store', 'update', 'destroy'])
     -> middleware(['auth', 'verified']);
 
 require __DIR__.'/auth.php';

@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('communities', function (Blueprint $table) {
+        Schema::create('community_memberships', function (Blueprint $table) {
             $table->id();
+            $table->boolean('is_admin')->default(false);
+            $table->boolean('is_active')->default(true);
             $table->foreignId('user_id')->constrained();
-            $table->string('name');
-            $table->string('description');
+            $table->foreignId('community_id')->constrained();
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('communities');
+        Schema::dropIfExists('community_memberships');
     }
 };

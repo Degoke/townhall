@@ -1,39 +1,72 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import InputError from '@/Components/InputError.vue';
-import Community from '@/Components/Commuity.vue';
-import { useForm, Head } from '@inertiajs/vue3';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import PrimaryButton from "@/Components/PrimaryButton.vue";
+import NavLink from "@/Components/NavLink.vue";
+import { Head } from "@inertiajs/vue3";
+import { watch } from "vue";
 
-defineProps(['communities']);
-
-const form = useForm({
-    name: '',
-});
+defineProps(["memberships", "groups", "group", "community"]);
 </script>
 
 <template>
-<Head title="Community" />
+    <Head title="Community" />
 
-<AuthenticatedLayout>
-    <div class="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
-            <form @submit.prevent="form.post(route('community.store'), { onSuccess: () => form.reset() })">
-                <input
-                    v-model="form.name"
-                    placeholder="Community name?"
-                    class="block w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 rounded-md shadow-sm"
-                />
-                <InputError :message="form.errors.name" class="mt-2" />
-                <PrimaryButton class="mt-4">Submit</PrimaryButton>
-            </form>
-
-            <div class="mt-6 bg-white shadow-sm rounded-lg divide-y">
-                <Community
-                    v-for="community in communities"
-                    :key="community.id"
-                    :community="community"
-                />
+    <AuthenticatedLayout>
+        <nav class="bg-white border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <!-- Navigation Links -->
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <NavLink
+                        v-for="membership in memberships"
+                        :key="membership.id"
+                        :href="
+                            route('community.index', {
+                                communityId: membership.community.id,
+                            })
+                        "
+                        :active="
+                            route().current('community.index', {
+                                communityId: membership.community.id,
+                            })
+                        "
+                    >
+                        {{ membership.community.name }}
+                    </NavLink>
+                    <NavLink
+                        :href="route('community.new')"
+                        :active="route().current('community.new')"
+                    >
+                        <PrimaryButton class="mt-4"
+                            >New Community</PrimaryButton
+                        >
+                    </NavLink>
+                </div>
             </div>
-        </div>
-</AuthenticatedLayout>
+        </nav>
+        <nav class="bg-white border-b border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <!-- Navigation Links -->
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <NavLink
+                        v-for="group in groups"
+                        :key="group.id"
+                        :href="
+                            route('community.index', {
+                                communityId: community.id,
+                                groupId: group.id
+                            })
+                        "
+                        :active="
+                            route().current('community.index', {
+                                communityId: community.id,
+                                groupId: group.id,
+                            })
+                        "
+                    >
+                        {{ group.name }}
+                    </NavLink>
+                </div>
+            </div>
+        </nav>
+    </AuthenticatedLayout>
 </template>
