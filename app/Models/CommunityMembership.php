@@ -15,6 +15,10 @@ class CommunityMembership extends Model
         'is_admin'
     ];
 
+    protected $with = [
+        'community'
+    ];
+
     public function user(): BelongsTo {
         return $this->belongsTo(User::class);
     }

@@ -18,40 +18,7 @@ class CommunityController extends Controller
      */
     public function index(Request $request): Response
     {
-        $user = $request->user();
-        $communityId = $request->route('communityId');
-        $groupId = $request->route('groupId');
-
-        $memberships = $user->communityMemberships()->with(['community'])->get();
-
-        $community = NULL;
-        $group = NULL;
-        $groups = NULL;
-
-        if (isset($communityId)) {
-            $community = Community::where('id', $communityId)->first();
-
-            if ($community) {
-                $groups = CommunityGroup::where('community_id', $communityId)->whereHas('communityMemberships', function($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })->get();
-    
-                if (isset($groupId)) {
-                    $group = CommunityGroup::where('id', $groupId)->first();
-    
-                    if (!$group) {
-                        $group = $groups->where('is_default', true)->get();
-                    }
-                    }
-                }  
-            }
-
-        return Inertia::render('Community/Index', [
-            'memberships' => $memberships,
-            'community' => $community,
-            'groups' => $groups,
-            'group' => $group,
-        ]);
+        //
     }
 
     /**
@@ -65,7 +32,7 @@ class CommunityController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, Community $Community): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:256',
@@ -92,7 +59,7 @@ class CommunityController extends Controller
         $communityMembership->communityGroups()->attach($communityGroup->id);
 
 
-        return redirect(route('community.show', ['id' => $community->id]));
+        return redirect(route('dashboard', ['community_id' => $community->id]));
     }
 
     /**
@@ -100,7 +67,23 @@ class CommunityController extends Controller
      */
     public function show(Request $request, Community $community)
     {
-        
+        // check if admin
+        $user = $request->user();
+
+        $membership = $user->communityMemberships()->where('community_id', $community->id)->first();
+
+        if (!$membership->is_admin) {
+            return redirect(route('dashboard', ['community' => $community->id]));
+        }
+        // generate invite link
+        $invite_link = "https://example.com";
+
+        // show
+
+        return Inertia::render('Community/Show', [
+            'community' => $community,
+            'invite_link' => $invite_link
+        ]);
     }
 
     /**

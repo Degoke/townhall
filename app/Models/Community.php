@@ -21,6 +21,10 @@ class Community extends Model
         'created' => CommunityCreated::class,
     ];
 
+    protected $with = [
+        'communityGroups'
+    ];
+
     public function user(): BelongsTo {
         return $this->belongsTo(User::class);
     }

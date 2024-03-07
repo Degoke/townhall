@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Community;
+use App\Models\CommunityMembership;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -19,9 +21,20 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
-        return Inertia::render('Auth/Register');
+        $community_id = $request->route('community_id');
+        if (isset($community_id)) {
+            $community = Community::where('id', $community_id)->first();
+
+            if (!isset($community)) {
+                abort(400, 'invalid community');
+            }
+        }
+
+        return Inertia::render('Auth/Register', [
+            'community_id' => $community_id
+        ]);
     }
 
     /**
@@ -38,12 +51,37 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        $community_id = $request->route('community_id');
+        $community = NULL;
+        $community_group = NULL;
+
+        if (isset($community_id)) {
+            $community = Community::where('id', $community_id)->first();
+
+            if (!isset($community)) {
+                abort(400, 'invalid community');
+            }
+
+            $community_group = $community->communityGroups()->where('is_default', true)->first();
+        }
+
         $user = User::create([
             'firstname' => $request->firstname,
             'lastname' => $request->lastname,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+
+        if (isset($community_id)) {
+            $communityMembership = new CommunityMembership();
+            $communityMembership->user_id = $user->id;
+            $communityMembership->is_admin = false;
+            $communityMembership->community_id = $community->id;
+            $communityMembership->save();
+
+            $communityMembership->communityGroups()->attach($community_group->id);
+        }
 
         event(new Registered($user));
 
